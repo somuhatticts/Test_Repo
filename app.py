@@ -228,6 +228,16 @@ def process_csv_file(filepath):
         content = file.read()
     return process_csv_content(content)
 
+def get_file_type(filename):
+    """Get file type based on extension"""
+    ext = filename.lower().split('.')[-1]
+    if ext == 'csv':
+        return 'csv'
+    elif ext in ['xlsx', 'xls']:
+        return 'excel'
+    else:
+        return 'unknown'
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -281,12 +291,106 @@ def list_onedrive_files():
                     'name': file['name'],
                     'size': file.get('size', 0),
                     'modified': file.get('lastModifiedDateTime', ''),
-                    'downloadUrl': file.get('@microsoft.graph.downloadUrl', '')
+                    'downloadUrl': file.get('@microsoft.graph.downloadUrl', ''),
+                    'type': get_file_type(file['name'])
                 })
         
         return jsonify({'files': formatted_files})
     except Exception as e:
         return jsonify({'error': f'Failed to list files: {str(e)}'}), 500
+
+@app.route('/onedrive/browse')
+def browse_onedrive():
+    """Browse OneDrive folders and files"""
+    try:
+        if 'access_token' not in session:
+            return jsonify({'error': 'Not authenticated. Please login first.'}), 401
+        
+        folder_path = request.args.get('path', '')
+        file_type = request.args.get('type', 'all')  # 'csv', 'excel', or 'all'
+        
+        onedrive_service = OneDriveService()
+        onedrive_service.access_token = session['access_token']
+        
+        # Get folders for navigation
+        folders = onedrive_service.get_folders(folder_path)
+        
+        # Get files based on type filter
+        if file_type == 'csv':
+            files = onedrive_service.get_csv_files(folder_path)
+        elif file_type == 'excel':
+            files = onedrive_service.search_files("", ['.xlsx', '.xls'], folder_path)
+        else:
+            files = onedrive_service.search_files("", ['.xlsx', '.xls', '.csv'], folder_path)
+        
+        # Format files for frontend
+        formatted_files = []
+        for file in files:
+            if 'file' in file:
+                formatted_files.append({
+                    'id': file['id'],
+                    'name': file['name'],
+                    'size': file.get('size', 0),
+                    'modified': file.get('lastModifiedDateTime', ''),
+                    'type': get_file_type(file['name']),
+                    'path': file.get('parentReference', {}).get('path', '') + '/' + file['name']
+                })
+        
+        # Format folders for frontend
+        formatted_folders = []
+        for folder in folders:
+            formatted_folders.append({
+                'id': folder['id'],
+                'name': folder['name'],
+                'path': folder['path'],
+                'childCount': folder['childCount'],
+                'type': 'folder'
+            })
+        
+        return jsonify({
+            'currentPath': folder_path,
+            'folders': formatted_folders,
+            'files': formatted_files,
+            'totalFiles': len(formatted_files),
+            'totalFolders': len(formatted_folders)
+        })
+    except Exception as e:
+        return jsonify({'error': f'Failed to browse OneDrive: {str(e)}'}), 500
+
+@app.route('/onedrive/csv-files')
+def list_csv_files():
+    """List specifically CSV files from OneDrive"""
+    try:
+        if 'access_token' not in session:
+            return jsonify({'error': 'Not authenticated. Please login first.'}), 401
+        
+        folder_path = request.args.get('path', '')
+        
+        onedrive_service = OneDriveService()
+        onedrive_service.access_token = session['access_token']
+        
+        # Get CSV files
+        csv_files = onedrive_service.get_csv_files(folder_path)
+        
+        # Format files for frontend
+        formatted_files = []
+        for file in csv_files:
+            formatted_files.append({
+                'id': file['id'],
+                'name': file['name'],
+                'size': file.get('size', 0),
+                'modified': file.get('lastModifiedDateTime', ''),
+                'type': 'csv',
+                'path': file.get('parentReference', {}).get('path', '') + '/' + file['name']
+            })
+        
+        return jsonify({
+            'files': formatted_files,
+            'count': len(formatted_files),
+            'currentPath': folder_path
+        })
+    except Exception as e:
+        return jsonify({'error': f'Failed to list CSV files: {str(e)}'}), 500
 
 @app.route('/onedrive/download/<file_id>')
 def download_onedrive_file(file_id):

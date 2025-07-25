@@ -141,6 +141,159 @@
             margin-right: 15px;
         }
 
+        .onedrive-browser {
+            margin-top: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            background: white;
+            overflow: hidden;
+        }
+
+        .browser-controls {
+            background: #f8fbff;
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .file-type-filter {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .file-type-filter label {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .file-type-filter select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: white;
+            font-size: 0.9rem;
+        }
+
+        .current-path {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .current-path span {
+            font-weight: bold;
+            color: #4facfe;
+            padding: 8px 12px;
+            background: white;
+            border-radius: 5px;
+            border: 1px solid #4facfe;
+        }
+
+        .btn-small {
+            background: #666;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-small:hover {
+            background: #555;
+            transform: translateY(-1px);
+        }
+
+        .folder-list {
+            max-height: 150px;
+            overflow-y: auto;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .folder-item {
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 12px 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .folder-item:hover {
+            background: #e3f2fd;
+            transform: translateX(5px);
+        }
+
+        .folder-item:last-child {
+            border-bottom: none;
+        }
+
+        .folder-icon {
+            font-size: 1.5rem;
+        }
+
+        .folder-info {
+            flex-grow: 1;
+        }
+
+        .folder-name {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .folder-details {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 2px;
+        }
+
+        .browser-status {
+            background: #f8fbff;
+            padding: 10px 15px;
+            border-top: 1px solid #e0e0e0;
+            text-align: center;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .file-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .file-item.csv {
+            border-left: 4px solid #28a745;
+        }
+
+        .file-item.excel {
+            border-left: 4px solid #007bff;
+        }
+
+        .file-badge {
+            background: #4facfe;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .file-badge.csv {
+            background: #28a745;
+        }
+
+        .file-badge.excel {
+            background: #007bff;
+        }
+
         .upload-area {
             border: 3px dashed #4facfe;
             border-radius: 15px;
@@ -394,11 +547,39 @@
                     <div class="upload-icon">☁️</div>
                     <div class="upload-text">Access files from OneDrive</div>
                     <div class="upload-subtext">Connect to your Microsoft OneDrive account</div>
-                    <button class="btn" onclick="authenticateOneDrive()">
+                    <button class="btn" onclick="authenticateOneDrive()" id="connectBtn">
                         Connect to OneDrive
                     </button>
-                    <div id="onedriveFiles" class="file-list" style="display: none;">
-                        <!-- OneDrive files will be listed here -->
+                    
+                    <div id="onedriveBrowser" class="onedrive-browser" style="display: none;">
+                        <div class="browser-controls">
+                            <div class="file-type-filter">
+                                <label>Show files:</label>
+                                <select id="fileTypeFilter" onchange="applyFileFilter()">
+                                    <option value="all">All Files (Excel & CSV)</option>
+                                    <option value="csv">CSV Files Only</option>
+                                    <option value="excel">Excel Files Only</option>
+                                </select>
+                            </div>
+                            <div class="current-path">
+                                <span id="currentPath">📁 Root</span>
+                                <button class="btn-small" onclick="goToParentFolder()" id="parentBtn" style="display: none;">
+                                    ⬆️ Up
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div id="folderList" class="folder-list">
+                            <!-- Folders will be listed here -->
+                        </div>
+                        
+                        <div id="onedriveFiles" class="file-list">
+                            <!-- Files will be listed here -->
+                        </div>
+                        
+                        <div id="browserStatus" class="browser-status">
+                            <span id="fileCount">0 files found</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -590,23 +771,9 @@
         }
 
         // OneDrive functionality
-        function showUploadMethod(method) {
-            // Hide all methods
-            document.querySelectorAll('.upload-method').forEach(el => {
-                el.classList.remove('active');
-            });
-            
-            // Remove active class from all buttons
-            document.querySelectorAll('.method-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            // Show selected method
-            document.getElementById(method + 'Upload').classList.add('active');
-            
-            // Add active class to selected button
-            event.target.classList.add('active');
-        }
+
+        let currentPath = '';
+        let currentFileType = 'all';
 
         function authenticateOneDrive() {
             // Redirect to OneDrive authentication
@@ -614,19 +781,102 @@
         }
 
         function loadOnedriveFiles() {
-            fetch('/onedrive/files')
+            document.getElementById('connectBtn').style.display = 'none';
+            document.getElementById('onedriveBrowser').style.display = 'block';
+            browseOneDrive('', 'all');
+        }
+
+        function browseOneDrive(path = '', fileType = 'all') {
+            currentPath = path;
+            currentFileType = fileType;
+            
+            const url = `/onedrive/browse?path=${encodeURIComponent(path)}&type=${fileType}`;
+            
+            fetch(url)
                 .then(response => response.json())
                 .then(data => {
-                    if (data.files) {
-                        displayOnedriveFiles(data.files);
+                    if (data.folders !== undefined && data.files !== undefined) {
+                        displayFoldersAndFiles(data);
+                        updatePathDisplay(path);
+                        updateFileCount(data.totalFiles);
                     } else {
-                        showError(data.error || 'Failed to load OneDrive files');
+                        showError(data.error || 'Failed to browse OneDrive');
                     }
                 })
                 .catch(err => {
-                    showError('Failed to connect to OneDrive');
+                    showError('Failed to browse OneDrive');
                     console.error('Error:', err);
                 });
+        }
+
+        function displayFoldersAndFiles(data) {
+            displayFolders(data.folders);
+            displayOnedriveFiles(data.files);
+        }
+
+        function displayFolders(folders) {
+            const foldersList = document.getElementById('folderList');
+            foldersList.innerHTML = '';
+            
+            if (folders.length === 0) {
+                foldersList.style.display = 'none';
+                return;
+            }
+            
+            foldersList.style.display = 'block';
+            
+            folders.forEach(folder => {
+                const folderItem = document.createElement('div');
+                folderItem.className = 'folder-item';
+                folderItem.onclick = () => navigateToFolder(folder.name);
+                
+                folderItem.innerHTML = `
+                    <div class="folder-icon">📁</div>
+                    <div class="folder-info">
+                        <div class="folder-name">${folder.name}</div>
+                        <div class="folder-details">${folder.childCount} items</div>
+                    </div>
+                `;
+                
+                foldersList.appendChild(folderItem);
+            });
+        }
+
+        function navigateToFolder(folderName) {
+            const newPath = currentPath ? `${currentPath}/${folderName}` : folderName;
+            browseOneDrive(newPath, currentFileType);
+        }
+
+        function goToParentFolder() {
+            if (currentPath) {
+                const pathParts = currentPath.split('/');
+                pathParts.pop();
+                const parentPath = pathParts.join('/');
+                browseOneDrive(parentPath, currentFileType);
+            }
+        }
+
+        function updatePathDisplay(path) {
+            const pathElement = document.getElementById('currentPath');
+            const parentBtn = document.getElementById('parentBtn');
+            
+            if (path) {
+                pathElement.textContent = `📁 ${path}`;
+                parentBtn.style.display = 'inline-block';
+            } else {
+                pathElement.textContent = '📁 Root';
+                parentBtn.style.display = 'none';
+            }
+        }
+
+        function updateFileCount(count) {
+            const fileCountElement = document.getElementById('fileCount');
+            fileCountElement.textContent = `${count} ${count === 1 ? 'file' : 'files'} found`;
+        }
+
+        function applyFileFilter() {
+            const fileType = document.getElementById('fileTypeFilter').value;
+            browseOneDrive(currentPath, fileType);
         }
 
         function displayOnedriveFiles(files) {
@@ -634,19 +884,19 @@
             filesList.innerHTML = '';
             
             if (files.length === 0) {
-                filesList.innerHTML = '<p style="text-align: center; color: #666;">No Excel or CSV files found in your OneDrive</p>';
-                filesList.style.display = 'block';
+                filesList.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No files found in this location</p>';
                 return;
             }
             
             files.forEach(file => {
                 const fileItem = document.createElement('div');
-                fileItem.className = 'file-item';
+                fileItem.className = `file-item ${file.type}`;
                 fileItem.onclick = () => downloadOnedriveFile(file.id);
                 
                 const fileIcon = getFileIcon(file.name);
                 const fileSize = formatFileSize(file.size);
                 const modifiedDate = new Date(file.modified).toLocaleDateString();
+                const fileType = file.type || 'unknown';
                 
                 fileItem.innerHTML = `
                     <div class="file-icon">${fileIcon}</div>
@@ -654,12 +904,11 @@
                         <div class="file-name">${file.name}</div>
                         <div class="file-details">${fileSize} • Modified ${modifiedDate}</div>
                     </div>
+                    <div class="file-badge ${fileType}">${fileType.toUpperCase()}</div>
                 `;
                 
                 filesList.appendChild(fileItem);
             });
-            
-            filesList.style.display = 'block';
         }
 
         function getFileIcon(filename) {
@@ -739,14 +988,71 @@
                 });
         }
 
-        // Check if user is returning from OneDrive auth
+        // Check if user is returning from OneDrive auth or already authenticated
         window.addEventListener('load', function() {
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('onedrive') === 'connected') {
                 showUploadMethod('onedrive');
                 loadOnedriveFiles();
             }
+            
+            // Check if user is already authenticated when switching to OneDrive tab
+            checkOneDriveAuth();
         });
+
+        function checkOneDriveAuth() {
+            // This function will be called when switching to OneDrive tab
+            // to check if user is already authenticated
+            fetch('/onedrive/browse?path=&type=all')
+                .then(response => {
+                    if (response.ok) {
+                        // User is authenticated, show browser
+                        document.getElementById('connectBtn').style.display = 'none';
+                        document.getElementById('onedriveBrowser').style.display = 'block';
+                        return response.json();
+                    } else if (response.status === 401) {
+                        // User needs to authenticate
+                        document.getElementById('connectBtn').style.display = 'block';
+                        document.getElementById('onedriveBrowser').style.display = 'none';
+                    }
+                })
+                .then(data => {
+                    if (data) {
+                        displayFoldersAndFiles(data);
+                        updatePathDisplay('');
+                        updateFileCount(data.totalFiles);
+                    }
+                })
+                .catch(err => {
+                    // Authentication required
+                    document.getElementById('connectBtn').style.display = 'block';
+                    document.getElementById('onedriveBrowser').style.display = 'none';
+                });
+        }
+
+        // Update the showUploadMethod function to check auth when switching to OneDrive
+        function showUploadMethod(method) {
+            // Hide all methods
+            document.querySelectorAll('.upload-method').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            // Remove active class from all buttons
+            document.querySelectorAll('.method-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected method
+            document.getElementById(method + 'Upload').classList.add('active');
+            
+            // Add active class to selected button
+            event.target.classList.add('active');
+            
+            // Check authentication when switching to OneDrive
+            if (method === 'onedrive') {
+                checkOneDriveAuth();
+            }
+        }
     </script>
 </body>
 </html>

@@ -6,7 +6,7 @@ A beautiful web application that accepts Excel files and displays them with colo
 
 - **Multiple Data Sources**: 
   - 📁 **Local Upload**: Drag & drop files or click to browse
-  - ☁️ **OneDrive Integration**: Fetch files directly from Microsoft OneDrive
+  - ☁️ **OneDrive Integration**: Browse folders, filter files, and fetch directly from Microsoft OneDrive
   - 🎯 **Demo Mode**: Test with sample data without setup
 - 🎨 **Colorful Data Visualization**: Different cell types are color-coded for easy identification
 - 📊 **Data Summary**: Shows key statistics about your data (rows, columns, data types)
@@ -15,6 +15,15 @@ A beautiful web application that accepts Excel files and displays them with colo
 - ⚡ **Fast Processing**: Optimized for quick file processing and display
 - 🎯 **User-Friendly Interface**: Modern, intuitive design with smooth animations
 - 🔐 **Microsoft Graph API Integration**: Secure authentication and file access
+
+## Enhanced OneDrive Features
+
+- **📁 Folder Navigation**: Browse through your OneDrive folder structure
+- **🔍 File Type Filtering**: Filter to show only CSV files, Excel files, or all files
+- **📊 File Details**: View file size, modification date, and file type at a glance
+- **🎨 Visual File Types**: Color-coded file items with type badges (CSV in green, Excel in blue)
+- **⬆️ Easy Navigation**: Navigate back to parent folders with one click
+- **📱 Responsive Browser**: Works seamlessly on desktop and mobile devices
 
 ## Color Coding System
 
@@ -67,9 +76,14 @@ To enable OneDrive integration:
    - Click "Connect to OneDrive"
    - Sign in with your Microsoft account
    - Grant permissions to access your files
-3. **Select a file**:
-   - Browse your OneDrive files
+3. **Browse and filter files**:
+   - **Navigate folders**: Click on any folder to browse its contents
+   - **Filter by type**: Use the dropdown to show "All Files", "CSV Files Only", or "Excel Files Only"
+   - **Navigate back**: Use the "⬆️ Up" button to go to parent folders
+   - **View file details**: See file size, modification date, and type badges
+4. **Select a file**:
    - Click on any Excel or CSV file to process it
+   - Files are color-coded (green for CSV, blue for Excel)
 
 ### Option 3: Demo Mode
 1. **Click the "🎯 Demo" tab**

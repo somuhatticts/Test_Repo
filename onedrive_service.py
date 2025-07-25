@@ -96,12 +96,19 @@ class OneDriveService:
             print(f"Error listing files: {str(e)}")
             return []
     
-    def search_files(self, query, file_types=None):
+    def search_files(self, query="", file_types=None, folder_path=""):
         """Search for files in OneDrive"""
         try:
-            endpoint = f"/me/drive/root/search(q='{query}')"
-            result = self._make_graph_request(endpoint)
+            if query:
+                endpoint = f"/me/drive/root/search(q='{query}')"
+            else:
+                # If no query, list all files in the specified folder or root
+                if folder_path:
+                    endpoint = f"/me/drive/root:/{folder_path}:/children"
+                else:
+                    endpoint = "/me/drive/root/children"
             
+            result = self._make_graph_request(endpoint)
             files = result.get('value', [])
             
             # Filter by file types if specified
@@ -115,6 +122,55 @@ class OneDriveService:
             return files
         except Exception as e:
             print(f"Error searching files: {str(e)}")
+            return []
+    
+    def get_csv_files(self, folder_path=""):
+        """Get specifically CSV files from OneDrive"""
+        try:
+            if folder_path:
+                endpoint = f"/me/drive/root:/{folder_path}:/children"
+            else:
+                endpoint = "/me/drive/root/children"
+            
+            result = self._make_graph_request(endpoint)
+            files = result.get('value', [])
+            
+            # Filter for CSV files only
+            csv_files = []
+            for file in files:
+                if 'file' in file and file['name'].lower().endswith('.csv'):
+                    csv_files.append(file)
+            
+            return csv_files
+        except Exception as e:
+            print(f"Error getting CSV files: {str(e)}")
+            return []
+    
+    def get_folders(self, folder_path=""):
+        """Get folders from OneDrive for navigation"""
+        try:
+            if folder_path:
+                endpoint = f"/me/drive/root:/{folder_path}:/children"
+            else:
+                endpoint = "/me/drive/root/children"
+            
+            result = self._make_graph_request(endpoint)
+            items = result.get('value', [])
+            
+            # Filter for folders only
+            folders = []
+            for item in items:
+                if 'folder' in item:
+                    folders.append({
+                        'id': item['id'],
+                        'name': item['name'],
+                        'path': item.get('parentReference', {}).get('path', '') + '/' + item['name'],
+                        'childCount': item.get('folder', {}).get('childCount', 0)
+                    })
+            
+            return folders
+        except Exception as e:
+            print(f"Error getting folders: {str(e)}")
             return []
     
     def download_file(self, file_id):
