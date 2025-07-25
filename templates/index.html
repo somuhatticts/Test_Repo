@@ -50,6 +50,97 @@
             text-align: center;
         }
 
+        .method-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .method-btn {
+            background: #f8fbff;
+            border: 2px solid #4facfe;
+            color: #4facfe;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .method-btn:hover {
+            background: #4facfe;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .method-btn.active {
+            background: #4facfe;
+            color: white;
+        }
+
+        .upload-method {
+            display: none;
+        }
+
+        .upload-method.active {
+            display: block;
+        }
+
+        .onedrive-area, .demo-area {
+            border: 3px dashed #4facfe;
+            border-radius: 15px;
+            padding: 60px 40px;
+            background: #f8fbff;
+            transition: all 0.3s ease;
+        }
+
+        .file-list {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            text-align: left;
+        }
+
+        .file-item {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .file-item:hover {
+            background: #f0f8ff;
+            border-color: #4facfe;
+            transform: translateX(5px);
+        }
+
+        .file-info {
+            flex-grow: 1;
+        }
+
+        .file-name {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .file-details {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .file-icon {
+            font-size: 2rem;
+            margin-right: 15px;
+        }
+
         .upload-area {
             border: 3px dashed #4facfe;
             border-radius: 15px;
@@ -270,18 +361,57 @@
     <div class="container">
         <div class="header">
             <h1>📊 Excel Data Visualizer</h1>
-            <p>Upload your Excel files and see them come to life with beautiful colors</p>
+            <p>Upload your Excel files or fetch them from OneDrive and see them come to life with beautiful colors</p>
         </div>
 
         <div id="uploadSection" class="upload-section">
-            <div class="upload-area" id="uploadArea">
-                <div class="upload-icon">📁</div>
-                <div class="upload-text">Drop your Excel file here</div>
-                <div class="upload-subtext">or click to browse (Excel, CSV files supported)</div>
-                <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
-                <button class="btn" onclick="document.getElementById('fileInput').click()">
-                    Choose File
+            <div class="method-selector">
+                <button class="method-btn active" onclick="showUploadMethod('local')">
+                    📁 Local Upload
                 </button>
+                <button class="method-btn" onclick="showUploadMethod('onedrive')">
+                    ☁️ OneDrive
+                </button>
+                <button class="method-btn" onclick="showUploadMethod('demo')">
+                    🎯 Demo
+                </button>
+            </div>
+
+            <div id="localUpload" class="upload-method active">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📁</div>
+                    <div class="upload-text">Drop your Excel file here</div>
+                    <div class="upload-subtext">or click to browse (Excel, CSV files supported)</div>
+                    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+                    <button class="btn" onclick="document.getElementById('fileInput').click()">
+                        Choose File
+                    </button>
+                </div>
+            </div>
+
+            <div id="onedriveUpload" class="upload-method">
+                <div class="onedrive-area">
+                    <div class="upload-icon">☁️</div>
+                    <div class="upload-text">Access files from OneDrive</div>
+                    <div class="upload-subtext">Connect to your Microsoft OneDrive account</div>
+                    <button class="btn" onclick="authenticateOneDrive()">
+                        Connect to OneDrive
+                    </button>
+                    <div id="onedriveFiles" class="file-list" style="display: none;">
+                        <!-- OneDrive files will be listed here -->
+                    </div>
+                </div>
+            </div>
+
+            <div id="demoUpload" class="upload-method">
+                <div class="demo-area">
+                    <div class="upload-icon">🎯</div>
+                    <div class="upload-text">Try with sample data</div>
+                    <div class="upload-subtext">Load demo Excel data to test the application</div>
+                    <button class="btn" onclick="loadDemoData()">
+                        Load Demo Data
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -458,6 +588,165 @@
             error.style.display = 'none';
             fileInput.value = '';
         }
+
+        // OneDrive functionality
+        function showUploadMethod(method) {
+            // Hide all methods
+            document.querySelectorAll('.upload-method').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            // Remove active class from all buttons
+            document.querySelectorAll('.method-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected method
+            document.getElementById(method + 'Upload').classList.add('active');
+            
+            // Add active class to selected button
+            event.target.classList.add('active');
+        }
+
+        function authenticateOneDrive() {
+            // Redirect to OneDrive authentication
+            window.location.href = '/auth/login';
+        }
+
+        function loadOnedriveFiles() {
+            fetch('/onedrive/files')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.files) {
+                        displayOnedriveFiles(data.files);
+                    } else {
+                        showError(data.error || 'Failed to load OneDrive files');
+                    }
+                })
+                .catch(err => {
+                    showError('Failed to connect to OneDrive');
+                    console.error('Error:', err);
+                });
+        }
+
+        function displayOnedriveFiles(files) {
+            const filesList = document.getElementById('onedriveFiles');
+            filesList.innerHTML = '';
+            
+            if (files.length === 0) {
+                filesList.innerHTML = '<p style="text-align: center; color: #666;">No Excel or CSV files found in your OneDrive</p>';
+                filesList.style.display = 'block';
+                return;
+            }
+            
+            files.forEach(file => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.onclick = () => downloadOnedriveFile(file.id);
+                
+                const fileIcon = getFileIcon(file.name);
+                const fileSize = formatFileSize(file.size);
+                const modifiedDate = new Date(file.modified).toLocaleDateString();
+                
+                fileItem.innerHTML = `
+                    <div class="file-icon">${fileIcon}</div>
+                    <div class="file-info">
+                        <div class="file-name">${file.name}</div>
+                        <div class="file-details">${fileSize} • Modified ${modifiedDate}</div>
+                    </div>
+                `;
+                
+                filesList.appendChild(fileItem);
+            });
+            
+            filesList.style.display = 'block';
+        }
+
+        function getFileIcon(filename) {
+            const ext = filename.toLowerCase().split('.').pop();
+            switch (ext) {
+                case 'xlsx':
+                case 'xls':
+                    return '📊';
+                case 'csv':
+                    return '📋';
+                default:
+                    return '📄';
+            }
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function downloadOnedriveFile(fileId) {
+            uploadSection.style.display = 'none';
+            loading.style.display = 'block';
+            error.style.display = 'none';
+            results.style.display = 'none';
+
+            fetch(`/onedrive/download/${fileId}`)
+                .then(response => response.json())
+                .then(data => {
+                    loading.style.display = 'none';
+                    
+                    if (data.success) {
+                        displayResults(data.data);
+                    } else {
+                        showError(data.error || 'Failed to process OneDrive file');
+                    }
+                })
+                .catch(err => {
+                    loading.style.display = 'none';
+                    showError('Failed to download file from OneDrive');
+                    console.error('Error:', err);
+                });
+        }
+
+        function loadDemoData() {
+            uploadSection.style.display = 'none';
+            loading.style.display = 'block';
+            error.style.display = 'none';
+            results.style.display = 'none';
+
+            fetch('/onedrive/demo')
+                .then(response => response.json())
+                .then(data => {
+                    loading.style.display = 'none';
+                    
+                    if (data.success) {
+                        displayResults(data.data);
+                        // Show demo message
+                        if (data.message) {
+                            const infoContainer = document.getElementById('dataInfo');
+                            const demoMessage = document.createElement('div');
+                            demoMessage.style.cssText = 'background: #e8f5e8; padding: 10px; border-radius: 5px; margin-bottom: 15px; color: #2d5a2d; text-align: center;';
+                            demoMessage.innerHTML = `<strong>📋 ${data.message}</strong>`;
+                            infoContainer.parentNode.insertBefore(demoMessage, infoContainer);
+                        }
+                    } else {
+                        showError(data.error || 'Failed to load demo data');
+                    }
+                })
+                .catch(err => {
+                    loading.style.display = 'none';
+                    showError('Failed to load demo data');
+                    console.error('Error:', err);
+                });
+        }
+
+        // Check if user is returning from OneDrive auth
+        window.addEventListener('load', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('onedrive') === 'connected') {
+                showUploadMethod('onedrive');
+                loadOnedriveFiles();
+            }
+        });
     </script>
 </body>
 </html>
