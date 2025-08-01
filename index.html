@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hangman Game</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 Hangman Game</h1>
+            <div class="score-board">
+                <div class="score-item">
+                    <span class="label">Wins:</span>
+                    <span id="wins">0</span>
+                </div>
+                <div class="score-item">
+                    <span class="label">Losses:</span>
+                    <span id="losses">0</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="game-area">
+            <div class="hangman-container">
+                <svg id="hangman-svg" width="200" height="250" viewBox="0 0 200 250">
+                    <!-- Gallows -->
+                    <line x1="10" y1="230" x2="150" y2="230" stroke="#8B4513" stroke-width="4"/>
+                    <line x1="30" y1="230" x2="30" y2="20" stroke="#8B4513" stroke-width="4"/>
+                    <line x1="30" y1="20" x2="120" y2="20" stroke="#8B4513" stroke-width="4"/>
+                    <line x1="120" y1="20" x2="120" y2="50" stroke="#8B4513" stroke-width="4"/>
+                    
+                    <!-- Body parts (initially hidden) -->
+                    <circle id="head" cx="120" cy="65" r="15" stroke="#333" stroke-width="3" fill="none" style="display: none"/>
+                    <line id="body" x1="120" y1="80" x2="120" y2="170" stroke="#333" stroke-width="3" style="display: none"/>
+                    <line id="leftArm" x1="120" y1="110" x2="90" y2="140" stroke="#333" stroke-width="3" style="display: none"/>
+                    <line id="rightArm" x1="120" y1="110" x2="150" y2="140" stroke="#333" stroke-width="3" style="display: none"/>
+                    <line id="leftLeg" x1="120" y1="170" x2="90" y2="200" stroke="#333" stroke-width="3" style="display: none"/>
+                    <line id="rightLeg" x1="120" y1="170" x2="150" y2="200" stroke="#333" stroke-width="3" style="display: none"/>
+                </svg>
+            </div>
+
+            <div class="game-info">
+                <div class="word-container">
+                    <div id="word-display"></div>
+                    <div class="hint">
+                        <span class="label">Hint:</span>
+                        <span id="hint-text"></span>
+                    </div>
+                </div>
+
+                <div class="wrong-letters">
+                    <span class="label">Wrong letters:</span>
+                    <span id="wrong-letters-display"></span>
+                </div>
+
+                <div class="alphabet-container">
+                    <div id="alphabet"></div>
+                </div>
+
+                <div class="game-status">
+                    <div id="game-message"></div>
+                    <button id="play-again-btn" class="btn btn-primary" style="display: none;">Play Again</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
